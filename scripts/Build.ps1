@@ -19,7 +19,11 @@ try {
     }
     & $pythonExe scripts\prepare_notices.py
     if ($LASTEXITCODE -ne 0) { throw 'License notice generation failed.' }
-    $distributionDirectory = [System.IO.Path]::GetFullPath($OutputDirectory)
+    $distributionDirectory = if ([System.IO.Path]::IsPathRooted($OutputDirectory)) {
+        [System.IO.Path]::GetFullPath($OutputDirectory)
+    } else {
+        [System.IO.Path]::GetFullPath((Join-Path $projectRoot $OutputDirectory))
+    }
     & $pythonExe -m PyInstaller --noconfirm --clean --distpath $distributionDirectory --workpath build\pyinstaller packaging\ControlPointExporter.spec
     if ($LASTEXITCODE -ne 0) { throw 'PyInstaller failed.' }
     $binaryPath = Join-Path $distributionDirectory 'ControlPointExporter.exe'
