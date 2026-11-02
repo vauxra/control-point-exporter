@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<e:ead xmlns:e="http://ead3.archivists.org/schema/">
+  <e:control><e:recordid>urn:example.collections.E3-0007</e:recordid><e:filedesc><e:titlestmt><e:titleproper>EAD3 header title</e:titleproper></e:titlestmt></e:filedesc></e:control>
+  <e:archdesc><e:did><e:unittitle>EAD3 collection</e:unittitle><e:unitdate>1945-1950</e:unitdate></e:did>
+    <e:controlaccess><e:subject><e:part> Archives </e:part><e:part>Texas</e:part></e:subject>
+      <e:geogname><e:part>Lubbock</e:part><e:geographiccoordinates coordinatesystem="WGS84">33.58 -101.85</e:geographiccoordinates></e:geogname>
+    </e:controlaccess>
+  </e:archdesc>
+</e:ead>

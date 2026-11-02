@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ead xmlns="urn:isbn:1-931666-22-9">
+  <eadheader><eadid>urn:example.collections.00042</eadid><filedesc><titlestmt><titleproper>Header finding aid title</titleproper></titlestmt></filedesc></eadheader>
+  <archdesc><did><unittitle>García &amp; Sons</unittitle><unitdate>1900-1910</unitdate></did>
+    <controlaccess><head>Terms, not exported</head><p>Explanation, not exported.</p>
+      <subject>Archives</subject><persname>García, José</persname><corpname>Acme &amp; Sons</corpname>
+      <geogname>Texas</geogname><famname>Smith family</famname><title>The Book</title>
+      <genreform>Photographs</genreform><function>Publishing</function><occupation>Ranchers</occupation><name>Example name</name>
+      <controlaccess><head>Nested</head><subject>Archives</subject></controlaccess>
+    </controlaccess>
+  </archdesc>
+</ead>
