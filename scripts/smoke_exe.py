@@ -30,15 +30,16 @@ def main() -> None:
 <ead xmlns="urn:isbn:1-931666-22-9"><eadheader><eadid>urn:taro:ttu.sw.00042</eadid><filedesc><titlestmt>
 <titleproper>Finding aid header title should not be exported</titleproper></titlestmt></filedesc></eadheader><archdesc>
 <did><unittitle>Café collection, <unitdate>1900-1950</unitdate></unittitle><unitdate>1900-1950</unitdate></did>
-<controlaccess><subject>=1+1</subject><controlaccess><persname>Smith, <emph>Jane</emph>.</persname>
-<subject>=1+1</subject></controlaccess></controlaccess></archdesc></ead>''', encoding="utf-8")
+<controlaccess><subject source="fast">=1+1</subject><controlaccess><persname>Smith, <emph>Jane</emph>.</persname>
+<subject source="fast">=1+1</subject><corpname source="lcsh">Example &amp; Sons</corpname>
+</controlaccess></controlaccess></archdesc></ead>''', encoding="utf-8")
     xml3 = inputs / "ead3.xml"
     xml3.write_text('''<?xml version="1.0" encoding="UTF-16"?>
 <e:ead xmlns:e="http://ead3.archivists.org/schema/"><e:control><e:recordid>record.series.003</e:recordid>
 <e:filedesc><e:titlestmt><e:titleproper>EAD3 header title should not be exported</e:titleproper></e:titlestmt></e:filedesc></e:control>
 <e:archdesc><e:did><e:unittitle>EAD3 collection,</e:unittitle><e:unitdatestructured>
 <e:daterange><e:fromdate>1930</e:fromdate><e:todate>1940</e:todate></e:daterange></e:unitdatestructured></e:did>
-<e:controlaccess><e:geogname><e:part>Texas</e:part><e:part>History</e:part>
+<e:controlaccess><e:geogname source="lcsh"><e:part>Texas</e:part><e:part>History</e:part>
 <e:geographiccoordinates>31.0,-100.0</e:geographiccoordinates></e:geogname></e:controlaccess></e:archdesc></e:ead>''', encoding="utf-16")
     invalid = inputs / "malformed.xml"
     invalid.write_text("<ead><broken>", encoding="utf-8")
@@ -69,21 +70,26 @@ def main() -> None:
 
     report, book = convert("single", [xml2], 0)
     try:
-        rows = list(book["Control points"].values)[1:]
-        assert len(rows) == 3 and report["entries"] == 3
-        assert [r[1] for r in rows] == ["=1+1", "Smith, Jane.", "=1+1"]
-        assert all(r[2] == "00042" and r[3] == "Café collection, 1900-1950" and r[4] == str(xml2) for r in rows)
-        assert all(book["Control points"].cell(r, 2).data_type == "s" for r in (2, 3, 4))
+        sheet = book["Control points"]
+        assert tuple(cell.value for cell in sheet[1]) == (
+            "Control Point Type", "Source", "Control Point Value", "Finding Aid ID", "Finding Aid Title", "Source File")
+        rows = list(sheet.values)[1:]
+        assert len(rows) == 4 and report["entries"] == 4
+        assert [r[1] for r in rows] == ["fast", None, "fast", "lcsh"]
+        assert [r[2] for r in rows] == ["=1+1", "Smith, Jane.", "=1+1", "Example & Sons"]
+        assert all(r[3] == "00042" and r[4] == "Café collection, 1900-1950" and r[5] == str(xml2) for r in rows)
+        assert all(sheet.cell(r, 3).data_type == "s" for r in (2, 3, 4, 5))
+        assert all(sheet.cell(r, 2).data_type == "s" for r in (2, 4, 5))
         assert book["Issues"].max_row == 1
         assert book["Control points"].freeze_panes == "A2"
-        assert book["Control points"].auto_filter.ref == "A1:E4"
+        assert book["Control points"].auto_filter.ref == "A1:F5"
     finally:
         book.close()
     report, book = convert("mixed", [xml2, xml3, invalid], 1)
     try:
         rows = list(book["Control points"].values)[1:]
-        assert len(rows) == 4 and report["files_processed"] == 3 and report["failures"] == 1
-        assert rows[-1] == ("geogname", "Texas | History", "003", "EAD3 collection, 1930 - 1940", str(xml3))
+        assert len(rows) == 5 and report["files_processed"] == 3 and report["failures"] == 1
+        assert rows[-1] == ("geogname", "lcsh", "Texas | History", "003", "EAD3 collection, 1930 - 1940", str(xml3))
         issues = list(book["Issues"].values)[1:]
         assert len(issues) == 1 and issues[0][0] == str(invalid) and str(issues[0][1]).lower() == "error"
     finally:
@@ -103,7 +109,7 @@ def main() -> None:
                      "Non-ASCII/spaced paths", "ID suffix after final dot preserves leading zeros",
                      "Collection title and dates instead of header title", "Nested date is not duplicated",
                      "EAD3 human-readable structured date range",
-                     "Formula-like text remains literal",
+                     "Formula-like text remains literal", "Source attributes for subject/corpname/geogname and missing-source blanks",
                      "Duplicate preservation", "Source EAD associations", "Issue-only rows",
                      "Zero-entry workbook", "Frozen/filterable headers"],
         "remaining_platform_checks": "This is not a clean VM without Python installed; offline clean-machine Windows 10/11 checks must be recorded separately.",

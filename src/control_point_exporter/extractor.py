@@ -222,7 +222,10 @@ def extract_file(path: Path | str) -> ExtractionResult:
         if active and node_ns == namespace and local in TERM_TYPES:
             value = term_value(node)
             if value:
-                result.points.append(ControlPoint(local, value, aid_id, aid_title, source))
+                result.points.append(ControlPoint(
+                    type=local, source=node.get("source", ""), value=value,
+                    finding_aid_id=aid_id, finding_aid_title=aid_title, source_file=source,
+                ))
             else:
                 issue("Warning", f"Empty <{local}> control point was skipped.", node)
             return  # Inline terms are part of this occurrence, not extra rows.

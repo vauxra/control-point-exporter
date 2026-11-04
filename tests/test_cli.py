@@ -29,6 +29,9 @@ def test_cli_unicode_batch_reopens_workbook_and_report(tmp_path):
     second = source_folder / "é-second.xml"
     shutil.copyfile(FIXTURES / "ead2002.xml", first)
     shutil.copyfile(FIXTURES / "ead3.xml", second)
+    first.write_text(first.read_text(encoding="utf-8").replace("<subject>", '<subject source="fast">')
+                     .replace("<corpname>", '<corpname source="lcsh">'), encoding="utf-8")
+    second.write_text(second.read_text(encoding="utf-8").replace("<e:geogname>", '<e:geogname source="lcsh">'), encoding="utf-8")
     report_path = tmp_path / "résultats.json"
     completed = invoke(tmp_path, "--output-dir", tmp_path, "--report", report_path, first, second)
     assert completed.returncode == 0, completed.stderr
@@ -39,8 +42,12 @@ def test_cli_unicode_batch_reopens_workbook_and_report(tmp_path):
     book = load_workbook(report["workbook"])
     rows = list(book["Control points"].values)[1:]
     assert len(rows) == 13
-    assert rows[0][2:5] == ("00042", "García & Sons 1900-1910", str(first.resolve()))
-    assert rows[-1][2:5] == ("E3-0007", "EAD3 collection 1945-1950", str(second.resolve()))
+    assert tuple(cell.value for cell in book["Control points"][1]) == (
+        "Control Point Type", "Source", "Control Point Value", "Finding Aid ID", "Finding Aid Title", "Source File")
+    assert rows[0][1] == "fast" and rows[2][1] == "lcsh" and rows[-1][1] == "lcsh"
+    assert rows[1][1] is None  # A term without @source exports a blank cell.
+    assert rows[0][3:6] == ("00042", "García & Sons 1900-1910", str(first.resolve()))
+    assert rows[-1][3:6] == ("E3-0007", "EAD3 collection 1945-1950", str(second.resolve()))
     assert len(list(book["Issues"].values)) == 1
     book.close()
 

@@ -1,10 +1,10 @@
-Control Point Exporter 1.0.1 — third-party notices
+Control Point Exporter 1.0.2 — third-party notices
 The application bundles these components. Their original licenses follow.
 PyInstaller's license includes its bootloader distribution exception.
 Source and license references: https://www.python.org/; https://www.tcl.tk/; https://lxml.de/; https://openpyxl.readthedocs.io/; https://pyinstaller.org/.
 libiconv source releases: https://ftp.gnu.org/pub/gnu/libiconv/; lxml source releases: https://pypi.org/project/lxml/#files.
 This application includes GNU libiconv under LGPL 2.1. Corresponding source and Windows rebuild/relink materials are distributed with this release at:
-https://github.com/vauxra/control-point-exporter/releases/download/v1.0.1/ControlPointExporter-1.0.1-third-party-sources.zip
+https://github.com/vauxra/control-point-exporter/releases/download/v1.0.2/ControlPointExporter-1.0.2-third-party-sources.zip
 The application's own code is MIT-licensed; the third-party components retain their respective licenses below.
 
 

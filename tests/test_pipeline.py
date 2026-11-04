@@ -11,24 +11,29 @@ from control_point_exporter.exporter import ExportError, WorkbookExporter
 from control_point_exporter.models import ControlPoint, Issue
 
 
-def point(value="00001"):
-    return ControlPoint("subject", value, "00042", "=SUM(A1:A2)", "C:\\EADs\\á finding aid.xml")
+def point(value="00001", source="fast"):
+    return ControlPoint("subject", source, value, "00042", "=SUM(A1:A2)", "C:\\EADs\\á finding aid.xml")
 
 
 def test_workbook_text_styles_headers_and_issues(tmp_path):
     writer = WorkbookExporter(tmp_path)
-    writer.append_points([point(), point("=1+1"), point("+123"), point("@name")])
+    writer.append_points([point(), point("=1+1", "=1+1"), point("+123", "+123"), point("@name", "@name")])
     writer.append_issues([Issue("example.xml", "Warning", "Empty subject (line 12)")])
     path = writer.finish()
     book = load_workbook(path)
     assert book.sheetnames == ["Control points", "Issues"]
     sheet = book["Control points"]
-    assert tuple(c.value for c in sheet[1]) == exporter.POINT_HEADERS
-    assert [sheet.cell(i, 2).value for i in range(2, 6)] == ["00001", "=1+1", "+123", "@name"]
-    assert all(sheet.cell(i, j).data_type == "s" for i in range(2, 6) for j in range(1, 6))
-    assert sheet["C2"].value == "00042"
-    assert sheet["D2"].value == "=SUM(A1:A2)"
-    assert sheet.freeze_panes == "A2" and sheet.auto_filter.ref == "A1:E5"
+    assert tuple(c.value for c in sheet[1]) == (
+        "Control Point Type", "Source", "Control Point Value", "Finding Aid ID",
+        "Finding Aid Title", "Source File",
+    )
+    assert [sheet.cell(i, 2).value for i in range(2, 6)] == ["fast", "=1+1", "+123", "@name"]
+    assert [sheet.cell(i, 3).value for i in range(2, 6)] == ["00001", "=1+1", "+123", "@name"]
+    assert all(sheet.cell(i, j).data_type == "s" for i in range(2, 6) for j in range(1, 7))
+    assert sheet["D2"].value == "00042"
+    assert sheet["E2"].value == "=SUM(A1:A2)"
+    assert sheet["F2"].value == "C:\\EADs\\á finding aid.xml"
+    assert sheet.freeze_panes == "A2" and sheet.auto_filter.ref == "A1:F5"
     assert sheet["B2"].alignment.wrap_text
     assert sheet["A1"].font.bold and sheet.row_dimensions[1].height == 24
     assert list(book["Issues"].values)[1] == ("example.xml", "Warning", "Empty subject (line 12)")
@@ -147,12 +152,38 @@ def test_mixed_batch_preserves_sources_duplicates_and_continues(tmp_path):
     assert result.files_processed == 3 and result.failures == 1 and result.entries == 4
     book = load_workbook(result.workbook)
     rows = list(book["Control points"].values)[1:]
-    assert [r[4] for r in rows] == [str(first.resolve())] * 2 + [str(last.resolve())] * 2
+    assert [r[5] for r in rows] == [str(first.resolve())] * 2 + [str(last.resolve())] * 2
     assert rows[0] == rows[1] and rows[2] == rows[3]
-    assert rows[0][1:3] == ("=1+1", "0007")
-    assert rows[0][3] == "Collection title 1900-1910"
+    assert rows[0][1] is None  # No source attribute exports as a blank cell.
+    assert rows[0][2:4] == ("=1+1", "0007")
+    assert rows[0][4] == "Collection title 1900-1910"
     issues = list(book["Issues"].values)[1:]
     assert issues and all(r[0] == str(malformed.resolve()) for r in issues)
+    book.close()
+
+
+def test_02137_geographic_sources_reach_workbook_in_occurrence_order(tmp_path):
+    from control_point_exporter.runner import run_export
+
+    source = tmp_path / "02137.xml"
+    source.write_text('''<ead><eadheader><eadid>collection.02137</eadid></eadheader>
+<archdesc><did><unittitle>Example collection</unittitle></did><controlaccess>
+<geogname encodinganalog="651" source="fast">New Mexico</geogname>
+<geogname encodinganalog="651" source="lcsh">Llano Estacado</geogname>
+<geogname encodinganalog="651" source="lcsh">Brazos River</geogname>
+<geogname encodinganalog="651" source="lcsh">Staked Plains</geogname>
+</controlaccess></archdesc></ead>''', encoding="utf-8")
+    result = run_export([source], tmp_path)
+    assert result.entries == 4 and result.failures == result.warnings == 0
+    book = load_workbook(result.workbook)
+    rows = list(book["Control points"].values)[1:]
+    assert [row[:4] for row in rows] == [
+        ("geogname", "fast", "New Mexico", "02137"),
+        ("geogname", "lcsh", "Llano Estacado", "02137"),
+        ("geogname", "lcsh", "Brazos River", "02137"),
+        ("geogname", "lcsh", "Staked Plains", "02137"),
+    ]
+    assert all(row[5] == str(source.resolve()) for row in rows)
     book.close()
 
 

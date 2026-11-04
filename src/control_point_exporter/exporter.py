@@ -14,7 +14,7 @@ from openpyxl.writer.excel import ExcelWriter
 
 from .models import ControlPoint, Issue
 
-POINT_HEADERS = ("Control Point Type", "Control Point Value", "Finding Aid ID",
+POINT_HEADERS = ("Control Point Type", "Source", "Control Point Value", "Finding Aid ID",
                  "Finding Aid Title", "Source File")
 ISSUE_HEADERS = ("Source File", "Severity", "Problem")
 MAX_ROWS = 1_048_576
@@ -47,7 +47,7 @@ class WorkbookExporter:
         self.issue_count = 0
         self.temp_path: Path | None = None
         self.closed = False
-        self._prepare(self.points, POINT_HEADERS, (23, 60, 25, 60, 85))
+        self._prepare(self.points, POINT_HEADERS, (23, 18, 60, 25, 60, 85))
         self._prepare(self.issues, ISSUE_HEADERS, (85, 14, 100))
 
     def _prepare(self, sheet, headers, widths):
@@ -85,7 +85,7 @@ class WorkbookExporter:
             check_cancel(cancel_event)
             if self.point_count + 2 > MAX_ROWS:
                 raise ExportError(f"Control points exceed Excel's {MAX_ROWS - 1:,} data-row limit. Export a smaller batch.")
-            self.points.append(self._cells(self.points, (point.type, point.value, point.finding_aid_id,
+            self.points.append(self._cells(self.points, (point.type, point.source, point.value, point.finding_aid_id,
                                                         point.finding_aid_title, point.source_file)))
             self.point_count += 1
 
@@ -107,7 +107,7 @@ class WorkbookExporter:
 
     def finish(self, cancel_event: Event | None = None) -> Path:
         check_cancel(cancel_event)
-        self.points.auto_filter.ref = f"A1:E{self.point_count + 1}"
+        self.points.auto_filter.ref = f"A1:F{self.point_count + 1}"
         self.issues.auto_filter.ref = f"A1:C{self.issue_count + 1}"
         try:
             fd, name = tempfile.mkstemp(prefix=".control-point-", suffix=".xlsx", dir=self.output_dir)

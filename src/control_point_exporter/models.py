@@ -6,6 +6,7 @@ from pathlib import Path
 @dataclass(frozen=True, slots=True)
 class ControlPoint:
     type: str
+    source: str
     value: str
     finding_aid_id: str
     finding_aid_title: str

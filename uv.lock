@@ -22,7 +22,7 @@ wheels = [
 
 [[package]]
 name = "control-point-exporter"
-version = "1.0.1"
+version = "1.0.2"
 source = { editable = "." }
 dependencies = [
     { name = "lxml" },

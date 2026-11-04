@@ -83,15 +83,19 @@ def export_check(output: Path) -> dict:
         try:
             exported = list(workbook["Control points"].iter_rows(min_row=2))
             assert len(exported) == 13
-            assert all(cell.data_type == "s" for row in exported for cell in row)
-            actual_sources = [row[4].value for row in exported]
+            assert tuple(cell.value for cell in next(workbook["Control points"].iter_rows())) == (
+                "Control Point Type", "Source", "Control Point Value", "Finding Aid ID", "Finding Aid Title", "Source File")
+            assert all(cell.data_type == "s" or index == 1 and cell.value is None
+                       for row in exported for index, cell in enumerate(row))
+            assert all(row[1].value is None for row in exported)
+            actual_sources = [row[5].value for row in exported]
             assert actual_sources.count(str(sources[0])) == 11
             assert actual_sources.count(str(sources[1])) == 2
             expected_metadata = {
                 str(sources[0]): ("00042", "García & Sons 1900-1910"),
                 str(sources[1]): ("E3-0007", "EAD3 collection 1945-1950"),
             }
-            assert all((row[2].value, row[3].value) == expected_metadata[row[4].value] for row in exported)
+            assert all((row[3].value, row[4].value) == expected_metadata[row[5].value] for row in exported)
         finally:
             workbook.close()
         return {"passed": True, "files": 2, "rows": 13, "workbook": str(result.workbook),

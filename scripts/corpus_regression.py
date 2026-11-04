@@ -22,7 +22,7 @@ from openpyxl import load_workbook
 ROOT = Path(__file__).resolve().parents[1]
 TYPES = {"subject", "persname", "corpname", "geogname", "famname", "title", "genreform", "function", "occupation", "name"}
 EXPECTED_TYPES = {"subject": 14259, "persname": 8549, "corpname": 7317, "geogname": 5391, "famname": 332, "title": 1}
-HEADERS = ("Control Point Type", "Control Point Value", "Finding Aid ID", "Finding Aid Title", "Source File")
+HEADERS = ("Control Point Type", "Source", "Control Point Value", "Finding Aid ID", "Finding Aid Title", "Source File")
 NS = "{urn:isbn:1-931666-22-9}"
 
 
@@ -66,7 +66,7 @@ def reference(corpus: Path) -> tuple[Counter, set[str], dict]:
             if in_control and tag in TYPES:
                 value = text(node)
                 if value:
-                    rows[(tag, value, aid, title, source)] += 1
+                    rows[(tag, node.get("source", ""), value, aid, title, source)] += 1
                     types[tag] += 1
                     file_pairs.append((tag, value))
                 else:
@@ -140,8 +140,11 @@ def main() -> None:
         assert tuple(c.value for c in next(records)) == HEADERS
         actual_rows = Counter()
         for row in records:
-            assert all(c.data_type == "s" for c in row), [c.data_type for c in row]
-            actual_rows[tuple(c.value for c in row)] += 1
+            assert all(c.data_type == "s" or index == 1 and c.value is None
+                       for index, c in enumerate(row)), [c.data_type for c in row]
+            values = tuple("" if index == 1 and c.value is None else c.value
+                           for index, c in enumerate(row))
+            actual_rows[values] += 1
         assert actual_rows == expected_rows, {
             "missing": (expected_rows - actual_rows).most_common(3),
             "extra": (actual_rows - expected_rows).most_common(3),
@@ -160,6 +163,7 @@ def main() -> None:
         "manifest_hashes_verified": not args.skip_hashes, "corpus_bytes": total_bytes,
         "baseline": baseline, "workbook": str(workbook),
         "verified": ["Exact headers", "All 35,849 complete row tuples against independent XML reader",
+                     "Control point source attributes including blanks",
                      "Finding aid ID suffix/collection title plus dates/source associations", "Duplicate occurrence multiplicity",
                      "Literal text cell types", "Issue-only file associations", "No input failures"],
         "conversion_seconds": round(conversion_seconds, 3),

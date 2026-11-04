@@ -1,6 +1,6 @@
 # XML stack source and native Windows rebuild materials
 
-This archive accompanies Control Point Exporter 1.0.1. The application's own source is MIT-licensed. GNU libiconv retains LGPL 2.1; the other bundled components retain their respective licenses. The app's About view includes their notices and this archive's release URL. No additional restrictions on modifying or debugging your rebuilt application are imposed.
+This archive accompanies Control Point Exporter 1.0.2. The application's own source is MIT-licensed. GNU libiconv retains LGPL 2.1; the other bundled components retain their respective licenses. The app's About view includes their notices and this archive's release URL. No additional restrictions on modifying or debugging your rebuilt application are imposed.
 
 The archive contains complete source trees, build files, and licenses for the lxml XML stack: `native-build/` is upstream `lxml/libxml2-win-binaries` at tag `2026.05.17`, with all four exact submodules expanded; `lxml/` is the hash-verified lxml 6.1.3 source distribution. `application-source/` contains the public application source, fixtures, lockfile, and packaging scripts. `SOURCE-MANIFEST.json` records immutable URLs, commits, versions, and archive hashes. `SOURCE-FILE-SHA256.json` records every included file except itself.
 

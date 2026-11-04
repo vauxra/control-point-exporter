@@ -175,6 +175,40 @@ def test_all_ead3_types_and_inline_part(tmp_path):
 
 
 @pytest.mark.parametrize("version", ["EAD2002", "EAD3"])
+@pytest.mark.parametrize("namespace", [True, False])
+@pytest.mark.parametrize("term_type", sorted(TERM_TYPES))
+def test_source_attribute_for_every_control_point_type(tmp_path, version, namespace, term_type):
+    value = "<part>Same term</part>" if version == "EAD3" else "Same term"
+    terms = "".join(
+        f'<{term_type}{attribute}>{value}</{term_type}>'
+        for attribute in (' source="fast"', ' source="lcsh"', "", ' source=""')
+    )
+    result = run_xml(tmp_path, document(
+        f"<controlaccess>{terms}</controlaccess>", version=version, namespace=namespace,
+    ))
+    assert not result.issues
+    assert [(point.type, point.source, point.value) for point in result.points] == [
+        (term_type, source, "Same term") for source in ("fast", "lcsh", "", "")
+    ]
+
+
+@pytest.mark.parametrize("version", ["EAD2002", "EAD3"])
+@pytest.mark.parametrize("namespace", [True, False])
+def test_source_comes_only_from_the_control_point_element(tmp_path, version, namespace):
+    child = "part" if version == "EAD3" else "emph"
+    content = f'''<controlaccess source="parent">
+<subject><{child} source="child">No local source</{child}></subject>
+<subject source=""><{child} source="child">Empty local source</{child}></subject>
+<subject source=" FAST "><{child} source="child">Own source</{child}></subject>
+</controlaccess>'''
+    result = run_xml(tmp_path, document(content, version=version, namespace=namespace))
+    assert not result.issues
+    assert [(point.source, point.value) for point in result.points] == [
+        ("", "No local source"), ("", "Empty local source"), (" FAST ", "Own source"),
+    ]
+
+
+@pytest.mark.parametrize("version", ["EAD2002", "EAD3"])
 @pytest.mark.parametrize("raw_id,expected", [
     ("urn:taro:ttu.sw.00001", "00001"),
     ("organization.collection.section.000042", "000042"),
